@@ -15,9 +15,11 @@ public class Turnout : MonoBehaviour
             if (destinations[i] != -1)
                 direction = i;
         }
+        rotate(direction, 2);//use two because the default arrow sprite faces down
     }
     private void OnMouseUp()//when this collider is clicked change the direction
     {
+        int wasFacing = direction;
         Debug.Log("clicked");
         do//move it one over and repeat if not valid direction
         {
@@ -36,7 +38,23 @@ public class Turnout : MonoBehaviour
             case 3: str = "left"; break;
         }
         Debug.Log("Now pointing " + str);
+
         //after it decides the correct direction it needs to update the sprite to look correct
+        rotate(direction, wasFacing);
+
+    }
+
+    private void rotate(int dir, int wf)
+    {
+        if (dir != wf)//if it changed
+        {
+            Quaternion rotation = transform.localRotation;
+            int dif = wf - dir;
+            int degrees = dif * 90;
+            Vector3 v = new Vector3(0f, 0f, (float)degrees);
+            transform.Rotate(v, Space.World);
+            Debug.Log("Rotated by " + degrees + " degrees");
+        }
     }
 
     public int getNext(){ return destinations[direction]; }

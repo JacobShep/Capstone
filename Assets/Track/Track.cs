@@ -9,7 +9,6 @@ public class Track : MonoBehaviour
     private Train[] trains;
     private Section[] sections;
     public Transform s;
-    private Vector3 spawn;
     public GameObject prefab;
     void Awake()
     {
