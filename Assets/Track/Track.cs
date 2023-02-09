@@ -48,12 +48,7 @@ public class Track : MonoBehaviour
                 Transform trans = sections[i].Next();
                 if (trans is null)//at end of path
                 {
-                    i++;
-                    //Debug.Log("Train "+t.getID()+" is trying to leaving section "+i);
-                    if (i < sections.Length)//check for end of array 
-                        changeSections(t, i); //not the last section move on
-                    else//is the last section loop back
-                        changeSections(t, 0);
+                    changeSections(t, sections[i].getNextSection(), i);//train, where we are going, where we are/were
                 }
                 else//Do not need to leave yet
                     t.Move(trans);
@@ -63,25 +58,23 @@ public class Track : MonoBehaviour
         }
     }
 
-    private void changeSections(Train t, int i)
+    private void changeSections(Train t, int next, int last)
     {
-        int last;
 
-        if (i == 0)
-            last = sections.Length - 1;
-        else
-            last = i - 1;
-
-        if (!sections[i].isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
+        if (!sections[next].isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
         {//it isnt locked
-            if (t.isStopped())//if it had to stop before
+            if (next < last && next != 0)
+                sections[next].Reverse(true);//direction you are entering from
+            else
+                sections[next].Reverse(false);
+            if (t.isStopped())//direction you are entering from
             {
                 Debug.Log("Train " + t.getID() + "is starting again");
                 t.restart(-1f);
             }
-            sections[i].Enter();//enter first so that we dont get stuck in nowhere
+            sections[next].Enter();//enter first so that we dont get stuck in nowhere
             sections[last].Exit();
-            t.setIndex(i);
+            t.setIndex(next);
         }
         else if (!t.isStopped())//should only be called the first time
         { //next is locked

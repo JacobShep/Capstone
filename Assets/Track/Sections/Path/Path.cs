@@ -25,7 +25,7 @@ public class Path : MonoBehaviour
         return waypoints[index];
     }
 
-    public Transform Next()
+    public Transform NextF() //gives the path from 0->n
     {
         if (index < waypoints.Length - 1)
         {
@@ -39,6 +39,24 @@ public class Path : MonoBehaviour
         }
     }
 
+    public Transform NextR() //n->0
+    {
+        if (index < 0)
+        {
+            index--;
+            return waypoints[index];//give next waypoint
+        }
+        else
+        {
+            index = 0;//reset this path
+            return null;//we are at the end go to next section
+        }
+    }
+
+    public void PrepReverse()//gets ready to go backwards
+    {
+        index = waypoints.Length - 1;
+    }
     public string getPath()
     {
         string msg = "";

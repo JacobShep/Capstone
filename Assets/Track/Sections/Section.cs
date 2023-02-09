@@ -5,11 +5,12 @@ using UnityEngine;
 public class Section : MonoBehaviour
 {
     public Path myP;
-    public Signal mySig;
+    public Signal mySig;//this will have to be an array since there has to be one at both ends of the section
+    public Turnout myTurn;//this one will eventually be an array
     private byte locked = 0;
     private int id;
     public int order;
-
+    private bool isReverse;
 
     void Awake()
     {
@@ -18,6 +19,7 @@ public class Section : MonoBehaviour
             Debug.Log("Null path");
         if (mySig is null)
             Debug.Log("Null signal");
+        isReverse = false;
         //Debug.Log("My path:" + myP.getPath());
         //if (myP is null)
         //    Debug.Log("path is null");
@@ -26,7 +28,12 @@ public class Section : MonoBehaviour
 
     public Transform Next()
     {
-        Transform t = myP.Next();
+        Transform t; 
+        if (isReverse)
+            t = myP.NextR();
+        else
+            t = myP.NextF();
+
         if (t is null)
             return null;
         else
@@ -68,4 +75,8 @@ public class Section : MonoBehaviour
     }
 
     public int getID(){ return id; }
+
+    public int getNextSection() { return myTurn.getNext(); }
+
+    public void Reverse(bool r) { isReverse = r; }
 }
