@@ -43,6 +43,7 @@ public class Track : MonoBehaviour
             int i = t.getIndex();
             if (t.isReady())//check if we need to get next
             {//getting next
+                Debug.Log("Reached index: " + sections[i].myP.getCur() + " in section: " + i);
                 t.resetReady();
                 Transform trans = sections[i].Next();
                 if (trans is null)//at end of path
@@ -62,15 +63,25 @@ public class Track : MonoBehaviour
 
         if (!sections[next].isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
         {//it isnt locked
-            if (next < last && next != 0)
-                sections[next].Reverse(true);//direction you are entering from
+            #region Next Section Reverse or Not
+            Debug.Log("Next: " + next + " Last: " + last);
+            if (next == 0 && last == sections.Length - 1)
+                sections[next].Reverse(false);
+            else if (last > next || (last == 0 && next == sections.Length - 1))
+            { 
+                sections[next].Reverse(true);
+                sections[next].myP.PrepReverse();
+            }
             else
                 sections[next].Reverse(false);
+            #endregion
+
             if (t.isStopped())//direction you are entering from
             {
                 Debug.Log("Train " + t.getID() + "is starting again");
                 t.restart(-1f);
             }
+
             sections[next].Enter();//enter first so that we dont get stuck in nowhere
             sections[last].Exit();
             t.setIndex(next);

@@ -5,8 +5,8 @@ using UnityEngine;
 public class Section : MonoBehaviour
 {
     public Path myP;
-    public Signal mySig;//this will have to be an array since there has to be one at both ends of the section
-    public Turnout myTurn;//this one will eventually be an array
+    public Signal[] mySig;
+    public Turnout[] myTurn;
     private byte locked = 0;
     private int id;
     public int order;
@@ -40,6 +40,21 @@ public class Section : MonoBehaviour
             return t;
     }
 
+    public int getNextSection() 
+    {
+        int nextSection;
+        if (isReverse)
+        {
+            nextSection = myTurn[0].getNext();
+            return nextSection;
+        }
+        else
+        {
+            nextSection = myTurn[1].getNext();
+            return nextSection;
+        }
+    }
+
     public Transform getCur()
     {
         return myP.getCur();
@@ -47,18 +62,17 @@ public class Section : MonoBehaviour
 
     public void Enter()
     {
-        Debug.Log("Just locked section: " + id);
         locked = 1;
-        mySig.close();
-        //also need to change signal sprites here
+        foreach (Signal s in mySig)
+            s.close();
     }
 
     public void Exit()
     {
         Debug.Log("Just unlocked section: " + id);
         locked = 0;
-        mySig.open();
-        //also need to change signal sprites here
+        foreach (Signal s in mySig)
+            s.open();
     }
 
     public bool isLocked()
@@ -76,7 +90,7 @@ public class Section : MonoBehaviour
 
     public int getID(){ return id; }
 
-    public int getNextSection() { return myTurn.getNext(); }
+    
 
     public void Reverse(bool r) { isReverse = r; }
 }

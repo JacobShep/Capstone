@@ -41,7 +41,8 @@ public class Path : MonoBehaviour
 
     public Transform NextR() //n->0
     {
-        if (index < 0)
+        Debug.Log("inside next reverse index is set to: " + index);
+        if (index > 0)
         {
             index--;
             return waypoints[index];//give next waypoint
