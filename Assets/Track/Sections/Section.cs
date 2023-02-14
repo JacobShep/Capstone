@@ -65,12 +65,15 @@ public class Section : MonoBehaviour
         locked = 1;
         foreach (Signal s in mySig)
             s.close();
+        myTurn[0].activate();
+        myTurn[1].activate();
     }
 
     public void Exit()
     {
-        Debug.Log("Just unlocked section: " + id);
+        //Debug.Log("Just unlocked section: " + id);
         locked = 0;
+        isReverse = false;
         foreach (Signal s in mySig)
             s.open();
     }
@@ -93,4 +96,5 @@ public class Section : MonoBehaviour
     
 
     public void Reverse(bool r) { isReverse = r; }
+    public bool isReversed() { return isReverse; }
 }

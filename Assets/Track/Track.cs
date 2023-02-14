@@ -43,7 +43,7 @@ public class Track : MonoBehaviour
             int i = t.getIndex();
             if (t.isReady())//check if we need to get next
             {//getting next
-                Debug.Log("Reached index: " + sections[i].myP.getCur() + " in section: " + i);
+                //Debug.Log("Reached index: " + sections[i].myP.getCur() + " in section: " + i);
                 t.resetReady();
                 Transform trans = sections[i].Next();
                 if (trans is null)//at end of path
@@ -78,21 +78,39 @@ public class Track : MonoBehaviour
 
             if (t.isStopped())//direction you are entering from
             {
-                Debug.Log("Train " + t.getID() + "is starting again");
-                t.restart(-1f);
+                //Debug.Log("Train " + t.getID() + "is starting again");
+                t.restart(-1f);//restart the train at default speed
             }
+
+            if (sections[last].isReversed())
+                turnoutAdjust(last, 1);//it entered at 1 and exited at 0 so 1 might close
+            else
+                turnoutAdjust(last, 0);
 
             sections[next].Enter();//enter first so that we dont get stuck in nowhere
             sections[last].Exit();
+
             t.setIndex(next);
         }
         else if (!t.isStopped())//should only be called the first time
         { //next is locked
-            Debug.Log("Section is locked stopping train "+t.getID());
+            //Debug.Log("Section is locked stopping train "+t.getID());
             t.hault();
         }
     }
 
+    private void turnoutAdjust(int sect, int toClose) //alter this function so it only checks the one you didnt just use ie the far one since the closer will be within the section you enter
+    {
+        bool closeit = true;
+        int[] arr = sections[sect].myTurn[toClose].getSections();
+        foreach (int i in arr)
+        {
+            if (i != -1 && sections[i].isLocked() && i != sect)
+            { Debug.Log("section " + i + " is still using this turnout " + toClose); closeit = false; break; }//one of the other sections needs this turnout active
+        }
+        if (closeit)
+            sections[sect].myTurn[toClose].deactivate();
+    }
     private void spawnTrain()
     {
         if (sections[0].isLocked())
