@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Train : MonoBehaviour
 {
+    public float rotationSpeed;
     private float speed;
     private float defSpeed = 2f;//setting speed onAwake made the trains to fast when instantiating on the fly so set them both to the same and let speed change over time
     private int index = 0;//defaults to section 0
@@ -26,8 +27,7 @@ public class Train : MonoBehaviour
         }
 
         Vector3 dir = target.position - transform.position;//compare location to target
-        transform.Translate(dir.normalized * speed * Time.deltaTime);//move 
-        //transform.rotation //adujst the rotation of the sprite
+        transform.Translate(dir.normalized * speed * Time.deltaTime);//move
     }
 
     public void hault() 

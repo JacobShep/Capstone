@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 public class Track : MonoBehaviour
 {
     // Start is called before the first frame update
@@ -9,7 +6,6 @@ public class Track : MonoBehaviour
     private Train[] trains;
     private Section[] sections;
     public Transform s;
-    private Vector3 spawn;
     public GameObject prefab;
     void Awake()
     {
@@ -44,16 +40,12 @@ public class Track : MonoBehaviour
             int i = t.getIndex();
             if (t.isReady())//check if we need to get next
             {//getting next
+                //Debug.Log("Reached index: " + sections[i].myP.getCur() + " in section: " + i);
                 t.resetReady();
                 Transform trans = sections[i].Next();
                 if (trans is null)//at end of path
                 {
-                    i++;
-                    //Debug.Log("Train "+t.getID()+" is trying to leaving section "+i);
-                    if (i < sections.Length)//check for end of array 
-                        changeSections(t, i); //not the last section move on
-                    else//is the last section loop back
-                        changeSections(t, 0);
+                    changeSections(t, sections[i].getNextSection(), i);//train, where we are going, where we are/were
                 }
                 else//Do not need to leave yet
                     t.Move(trans);
@@ -63,33 +55,76 @@ public class Track : MonoBehaviour
         }
     }
 
-    private void changeSections(Train t, int i)
+    private void changeSections(Train t, int next, int last)
     {
-        int last;
+        Debug.Log("Next section: " + next);
+        Section nextSection = sections[next];
+        Section lastSection = sections[last];
 
-        if (i == 0)
-            last = sections.Length - 1;
+        int ep;
+        if (lastSection.isReversed())
+            ep = 0;
         else
-            last = i - 1;
+            ep = 1;
 
-        if (!sections[i].isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
+        bool passingThrough = false;
+        if (lastSection.myEndpoints[ep] is Passthrough)
+            passingThrough = true;
+
+        if (!nextSection.isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
         {//it isnt locked
-            if (t.isStopped())//if it had to stop before
+            Debug.Log("Changing sections!");
+
+            #region Next Section Reverse or Not
+            
+
+            if (nextSection.getOrientationActual() == lastSection.myEndpoints[ep].getDirection())
+                nextSection.Reverse(false);
+            else
+                nextSection.Reverse(true);
+            #endregion
+
+            #region Restart Train
+            if (t.isStopped())//direction you are entering from
             {
-                Debug.Log("Train " + t.getID() + "is starting again");
-                t.restart(-1f);
+                //Debug.Log("Train " + t.getID() + "is starting again");
+                t.restart(-1f);//restart the train at default speed
             }
-            sections[i].Enter();//enter first so that we dont get stuck in nowhere
-            sections[last].Exit();
-            t.setIndex(i);
+            #endregion
+
+            #region Locking inaccessable turnouts
+            if (lastSection.isReversed())
+                turnoutAdjust(last, 1);//it entered at 1 and exited at 0 so 1 might close
+            else
+                turnoutAdjust(last, 0);
+            #endregion
+
+
+            nextSection.Enter();//enter first so that we dont get stuck in nowhere
+            lastSection.Exit();
+            t.setIndex(next);
         }
-        else if (!t.isStopped())//should only be called the first time
-        { //next is locked
-            Debug.Log("Section is locked stopping train "+t.getID());
+        else if (!t.isStopped())//next is locked hault the train
+        { 
+            if (passingThrough)
+                ((Passthrough)(lastSection.myEndpoints[ep])).swapDirections();//try letting the train through
+
             t.hault();
         }
     }
 
+    private void turnoutAdjust(int sect, int toClose) //alter this function so it only checks the one you didnt just use ie the far one since the closer will be within the section you enter
+    {
+        bool closeit = true;
+        int[] arr = sections[sect].myEndpoints[toClose].getSections();
+        foreach (int i in arr)
+        {
+            if (i != -1 && sections[i].isLocked() && i != sect)
+            { Debug.Log("section " + i + " is still using this turnout " + toClose); closeit = false; break; }//one of the other sections needs this turnout active
+        }
+        if (closeit)
+            sections[sect].myEndpoints[toClose].deactivate();
+    }
     private void spawnTrain()
     {
         if (sections[0].isLocked())
