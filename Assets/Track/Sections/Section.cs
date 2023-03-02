@@ -102,8 +102,8 @@ public class Section : MonoBehaviour
 
     
 
-    public void Reverse(bool r) { isReverse = r; }
+    public void Reverse(bool r) { isReverse = r; if(r) myP.PrepReverse(); }
     public bool isReversed() { return isReverse; }
-
+    
     public int getOrientationActual() { return orientationActual; }
 }
