@@ -1,12 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 public class Section : MonoBehaviour
 {
     public Path myP;
     public Signal[] mySig;
-    public Turnout[] myTurn;
+    public Endpoint[] myEndpoints;
+    public string orientationInput;
+    private int orientationActual;
     private byte locked = 0;
     private int id;
     public int order;
@@ -14,6 +13,14 @@ public class Section : MonoBehaviour
 
     void Awake()
     {
+        switch (orientationInput) 
+        {
+            case "up": orientationActual = IDirections.UP; break;
+            case "right": orientationActual = IDirections.RIGHT; break;
+            case "down": orientationActual = IDirections.DOWN; break;
+            case "left": orientationActual = IDirections.LEFT; break;
+        }
+
         id = (int)Random.Range(1f, 100f);
         if (myP is null)
             Debug.Log("Null path");
@@ -45,12 +52,12 @@ public class Section : MonoBehaviour
         int nextSection;
         if (isReverse)
         {
-            nextSection = myTurn[0].getNext();
+            nextSection = myEndpoints[0].getNext();
             return nextSection;
         }
         else
         {
-            nextSection = myTurn[1].getNext();
+            nextSection = myEndpoints[1].getNext();
             return nextSection;
         }
     }
@@ -65,8 +72,8 @@ public class Section : MonoBehaviour
         locked = 1;
         foreach (Signal s in mySig)
             s.close();
-        myTurn[0].activate();
-        myTurn[1].activate();
+        myEndpoints[0].activate();
+        myEndpoints[1].activate();
     }
 
     public void Exit()
@@ -97,4 +104,6 @@ public class Section : MonoBehaviour
 
     public void Reverse(bool r) { isReverse = r; }
     public bool isReversed() { return isReverse; }
+
+    public int getOrientationActual() { return orientationActual; }
 }

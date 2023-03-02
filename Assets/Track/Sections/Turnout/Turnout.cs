@@ -1,13 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
-public class Turnout : MonoBehaviour
+public class Turnout : Endpoint
 {
-    public int[] destinations = new int[4];//these need to be set before run time, indicate the index of the section which connects in that direction
-    //format for destinations [up, right, down, left]
-    private int direction;//indicates the direction the turnout is currently heading
-    private bool active;//should only be allowed to turn when there is a train in their section. 
     private void Awake()
     {
         for (int i = 0; i < destinations.Length; i++)//set direction to the first valid 
@@ -34,10 +27,10 @@ public class Turnout : MonoBehaviour
             string str = "";
             switch (direction)
             {
-                case 0: str = "up"; break;
-                case 1: str = "right"; break;
-                case 2: str = "down"; break;
-                case 3: str = "left"; break;
+                case IDirections.UP: str = "up"; break;
+                case IDirections.RIGHT: str = "right"; break;
+                case IDirections.DOWN: str = "down"; break;
+                case IDirections.LEFT: str = "left"; break;
             }
             Debug.Log("Now pointing " + str);
 
@@ -58,9 +51,4 @@ public class Turnout : MonoBehaviour
             Debug.Log("Rotated by " + degrees + " degrees");
         }
     }
-
-    public int getNext(){ return destinations[direction]; }
-    public void activate() { active = true; }
-    public void deactivate() { active = false; }
-    public int[] getSections() { return destinations; }
 }
