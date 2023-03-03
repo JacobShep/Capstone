@@ -99,9 +99,9 @@ public class Track : MonoBehaviour
                 turnoutAdjust(last, 0);
             #endregion
 
-
-            nextSection.Enter();//enter first so that we dont get stuck in nowhere
-            lastSection.Exit();
+            lastSection.Exit();//we are protected by a mutex so it shouldnt matter that we exit first
+            nextSection.Enter();
+            
             t.setIndex(next);
         }
         else if (!t.isStopped())//next is locked hault the train
