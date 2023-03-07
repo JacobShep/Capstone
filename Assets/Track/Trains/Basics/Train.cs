@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Train : MonoBehaviour
 {
-    public float rotationSpeed;
+    public float rotationSpeed;//to do rotation I can rotate when exiting section and exit direction != current rotation using similar code to turnouts
     private float speed;
     private float defSpeed = 2f;//setting speed onAwake made the trains to fast when instantiating on the fly so set them both to the same and let speed change over time
     private int index = 0;//defaults to section 0

@@ -76,8 +76,8 @@ public class Track : MonoBehaviour
             Debug.Log("Changing sections!");
 
             #region Next Section Reverse or Not
-            
 
+            Debug.Log("Orientation of section " + nextSection.order + " is " + nextSection.getOrientationActual() + " turnout is facing " + lastSection.myEndpoints[ep].getDirection());
             if (nextSection.getOrientationActual() == lastSection.myEndpoints[ep].getDirection())
                 nextSection.Reverse(false);
             else
@@ -106,7 +106,7 @@ public class Track : MonoBehaviour
         }
         else if (!t.isStopped())//next is locked hault the train
         { 
-            if (passingThrough)
+            if (passingThrough && (lastSection.myEndpoints[ep].getNext() == lastSection.order))//if its pointing to itself
                 ((Passthrough)(lastSection.myEndpoints[ep])).swapDirections();//try letting the train through
 
             t.hault();

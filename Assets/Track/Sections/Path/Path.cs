@@ -41,7 +41,6 @@ public class Path : MonoBehaviour
 
     public Transform NextR() //n->0
     {
-        Debug.Log("inside next reverse index is set to: " + index);
         if (index > 0)
         {
             index--;
