@@ -4,28 +4,36 @@ using UnityEngine;
 
 public class Path : MonoBehaviour
 {
-    private Transform[] waypoints;
+    private Waypoint[] waypoints;
     private int index;
     void Awake()
     {
         index = 0;
 
-        waypoints = new Transform[transform.childCount];
-        for (int i = 0; i < waypoints.Length; i++)
+        waypoints = GetComponentsInChildren<Waypoint>();
+        Waypoint[] temp = waypoints;
+        for (int i = 0; i < waypoints.Length - 1; i++)
         {
-            waypoints[i] = transform.GetChild(i);
+            for (int j = 0; j < waypoints.Length - i - 1; j++)
+            {
+                if (waypoints[j].id > waypoints[j + 1].id)
+                {
+                    Waypoint w = waypoints[j];
+                    waypoints[j] = waypoints[j + 1];
+                    waypoints[j + 1] = w;
+                }
+            }
         }
-
         //string msg = getPath();
         //Debug.Log("This Path is : " + msg);
     }
 
-    public Transform getCur()
+    public Waypoint getCur()
     {
         return waypoints[index];
     }
 
-    public Transform NextF() //gives the path from 0->n
+    public Waypoint NextF() //gives the path from 0->n
     {
         if (index < waypoints.Length - 1)
         {
@@ -39,7 +47,7 @@ public class Path : MonoBehaviour
         }
     }
 
-    public Transform NextR() //n->0
+    public Waypoint NextR() //n->0
     {
         if (index > 0)
         {
@@ -60,9 +68,9 @@ public class Path : MonoBehaviour
     public string getPath()
     {
         string msg = "";
-        foreach (Transform t in waypoints)
+        foreach (Waypoint w in waypoints)
         {
-            msg += t.position;
+            msg += w.transform.position;
             msg += " ";
         }
         return msg;

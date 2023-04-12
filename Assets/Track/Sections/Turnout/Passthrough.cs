@@ -9,10 +9,10 @@ public class Passthrough : Endpoint
     {
         for (int i = 0; i < 4; i++)
         {
-            if (i != direction && destinations[i] != -1)
+            if (i != Direction && destinations[i] != -1)
             {
-                Debug.Log("Swapping " + direction + " with " + i);
-                direction = i;
+                Debug.Log("Swapping " + Direction + " with " + i);
+                Direction = i;
                 return;
             }
         }

@@ -1,54 +1,44 @@
 using UnityEngine;
 public class Turnout : Endpoint
 {
+    public int order;
+    private Track theTrack;
     private void Awake()
     {
-        for (int i = 0; i < destinations.Length; i++)//set direction to the first valid 
-        {
-            if (destinations[i] != -1)
-            { direction = i; break; }
-        }
-        rotate(direction, 2);//use two because the default arrow sprite faces down
+        theTrack = FindObjectOfType<Track>();
+        Direction = 2;
     }
     private void OnMouseUp()//when this collider is clicked change the direction
     {
         if (active)
         {
-            int wasFacing = direction;
+            int wasFacing = Direction;
             Debug.Log("clicked");
             do//move it one over and repeat if not valid direction
             {
-                if (direction < destinations.Length - 1)
-                    direction++;
+                if (Direction < destinations.Length - 1)
+                    Direction++;
                 else
-                    direction = 0;
-            } while (destinations[direction] == -1);
-
-            string str = "";
-            switch (direction)
-            {
-                case IDirections.UP: str = "up"; break;
-                case IDirections.RIGHT: str = "right"; break;
-                case IDirections.DOWN: str = "down"; break;
-                case IDirections.LEFT: str = "left"; break;
-            }
-            Debug.Log("Now pointing " + str);
+                    Direction = 0;
+            } while (destinations[Direction] == -1);
 
             //after it decides the correct direction it needs to update the sprite to look correct
-            rotate(direction, wasFacing);
+            RotateTurnout(Direction, wasFacing);
+            theTrack.Turned(order, Direction);
         }
     }
 
-    private void rotate(int dir, int wf)
+    
+
+    public void RotateTurnout(int dir, int wasFacing)
     {
-        if (dir != wf)//if it changed
+        if (dir != wasFacing)//if it changed
         {
             Quaternion rotation = transform.localRotation;
-            int dif = wf - dir;
+            int dif = wasFacing - dir;
             int degrees = dif * 90;
             Vector3 v = new Vector3(0f, 0f, (float)degrees);
             transform.Rotate(v, Space.World);
-            Debug.Log("Rotated by " + degrees + " degrees");
         }
     }
 }

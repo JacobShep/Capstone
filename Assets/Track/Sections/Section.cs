@@ -6,7 +6,7 @@ public class Section : MonoBehaviour
     public Endpoint[] myEndpoints;
     public string orientationInput;
     private int orientationActual;
-    private byte locked = 0;
+    private byte locked = 0;//0 is open 1 is closed
     private int id;
     public int order;
     private bool isReverse;
@@ -33,18 +33,15 @@ public class Section : MonoBehaviour
         //Debug.Log("Section ID: " + id);
     }
 
-    public Transform Next()
+    public Waypoint Next()
     {
-        Transform t; 
+        Waypoint w; 
         if (isReverse)
-            t = myP.NextR();
+            w = myP.NextR();
         else
-            t = myP.NextF();
+            w = myP.NextF();
 
-        if (t is null)
-            return null;
-        else
-            return t;
+        return w;
     }
 
     public int getNextSection() 
@@ -62,7 +59,7 @@ public class Section : MonoBehaviour
         }
     }
 
-    public Transform getCur()
+    public Waypoint getCur()
     {
         return myP.getCur();
     }
@@ -99,11 +96,9 @@ public class Section : MonoBehaviour
     }
 
     public int getID(){ return id; }
-
-    
-
     public void Reverse(bool r) { isReverse = r; if(r) myP.PrepReverse(); }
     public bool isReversed() { return isReverse; }
-    
     public int getOrientationActual() { return orientationActual; }
+    public void Lock() { locked = 1; }
+    public void Unlock() { locked = 0; }
 }
