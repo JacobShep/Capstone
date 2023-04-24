@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using System;
 
 public class Train : MonoBehaviour
 {
@@ -9,6 +11,7 @@ public class Train : MonoBehaviour
     private int defSpeed = 1;
     private int sectionIndex = 0;//defaults to section 0
     private bool end, stopped = false;
+    public TextMeshPro Username { get; set; }
     public int ID { get; set; }
     private Waypoint currentTarget;
 
@@ -17,20 +20,28 @@ public class Train : MonoBehaviour
     private void Awake()
     {
         Speed = defSpeed;
-        ID = (int)Random.Range(1f, 1000f);//going to need to adjust this so that every id is unique
+        ID = (int)UnityEngine.Random.Range(1f, 1000f);//going to need to adjust this so that every id is unique
+        Username = GetComponentInChildren<TextMeshPro>();
     }
     public void Move(Waypoint target)//need to do something about waiting in here
     {
         currentTarget = target;
         Transform trans = target.transform;
-        if (Vector3.Distance(transform.position, trans.position) <= 0.2f || stopped)//if we are pretty close to the target we need a new one 
+        try
         {
-            end = true;
-            return;
-        }
+            if (Vector3.Distance(transform.position, trans.position) <= 0.2f || stopped)//if we are pretty close to the target we need a new one 
+            {
+                end = true;
+                return;
+            }
 
-        Vector3 dir = trans.position - transform.position;//compare location to target
-        transform.Translate(dir.normalized * Speed * Time.deltaTime);//move
+            Vector3 dir = trans.position - transform.position;//compare location to target
+            transform.Translate(dir.normalized * Speed * Time.deltaTime);//move
+        }
+        catch (Exception)
+        {
+            Debug.Log("Failed to move train " + ID);
+        }
     }
 
     public void hault() 
@@ -61,9 +72,8 @@ public class Train : MonoBehaviour
 
     public string getLocation() 
     {
-        Transform trans = currentTarget.transform;
-        Vector3 dir = transform.position - transform.position;
-        return ID + INetwork_Utils.DELIM + currentTarget.id + INetwork_Utils.DELIM + dir.ToString();
+        Debug.LogError("Sending the target ID as:" + currentTarget.id);
+        return ID + INetwork_Utils.DELIM + currentTarget.id +INetwork_Utils.DELIM + sectionIndex + INetwork_Utils.DELIM + transform.position.ToString(); 
     }
     public int GetSectionIndex() { return sectionIndex; }
     public void SetSectionIndex(int ind) { sectionIndex = ind; }

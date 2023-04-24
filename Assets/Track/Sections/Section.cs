@@ -95,10 +95,20 @@ public class Section : MonoBehaviour
         return myP.getPath();
     }
 
+    public void StartingWithinSectionAt(int id)
+    {
+        myP.SetIndex(id);
+    }
+
     public int getID(){ return id; }
     public void Reverse(bool r) { isReverse = r; if(r) myP.PrepReverse(); }
     public bool isReversed() { return isReverse; }
     public int getOrientationActual() { return orientationActual; }
     public void Lock() { locked = 1; }
     public void Unlock() { locked = 0; }
+
+    public Waypoint GetWaypointByID(int _id)
+    {
+        return myP.GetWaypointByID(_id);
+    }
 }

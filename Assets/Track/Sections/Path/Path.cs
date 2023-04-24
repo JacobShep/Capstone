@@ -75,4 +75,25 @@ public class Path : MonoBehaviour
         }
         return msg;
     }
+
+    public Waypoint GetWaypointByID(int _id)
+    {
+        foreach (Waypoint w in waypoints)
+            if (w.id == _id)
+                return w;
+        return null;
+    }
+
+    public void SetIndex(int _index)
+    {
+        for (int i = 0; i < waypoints.Length; i++)
+        {
+            if (waypoints[i].id == _index)
+            { 
+                index = i;
+                return;
+            }
+
+        }
+    }
 }

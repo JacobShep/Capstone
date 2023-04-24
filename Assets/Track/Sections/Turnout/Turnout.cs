@@ -13,7 +13,6 @@ public class Turnout : Endpoint
         if (active)
         {
             int wasFacing = Direction;
-            Debug.Log("clicked");
             do//move it one over and repeat if not valid direction
             {
                 if (Direction < destinations.Length - 1)
@@ -32,9 +31,9 @@ public class Turnout : Endpoint
 
     public void RotateTurnout(int dir, int wasFacing)
     {
+        Debug.Log("Turning " + dir + " to " + wasFacing);
         if (dir != wasFacing)//if it changed
         {
-            Quaternion rotation = transform.localRotation;
             int dif = wasFacing - dir;
             int degrees = dif * 90;
             Vector3 v = new Vector3(0f, 0f, (float)degrees);

@@ -1,15 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Text;
+using System;
 public class Track : MonoBehaviour
 {
     // Start is called before the first frame update
 
     private Train[] trains;
     public Train clientTrain { get; private set; }
+    public bool FinishedSetup { get; private set; }
+
     private Section[] sections;
     private Turnout[] turnouts;
-    private Waypoint firstPoint; 
+    private Waypoint firstPoint;
     
     public Transform spawn;
     public GameObject prefab;
@@ -68,7 +71,9 @@ public class Track : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (!FinishedSetup)
+            return;
+        //Debug.Log("Entered Track Update()");
         foreach (Train t in trains)
         {
             if(!(t is null))
@@ -95,7 +100,6 @@ public class Track : MonoBehaviour
 
     private void changeSections(Train t, int next, int last)
     {
-        Debug.Log("Next section: " + next);
         Section nextSection = sections[next];
         Section lastSection = sections[last];
 
@@ -109,23 +113,26 @@ public class Track : MonoBehaviour
         if (lastSection.myEndpoints[ep] is Passthrough)
             passingThrough = true;
 
-        if (!nextSection.isLocked())//this is the start of a critical region when working with race conditions this will need to be locked
-        {//it isnt locked
-            Debug.Log("Changing sections!");
-
+        if (!nextSection.isLocked())//this is the start of a critical region when working with race conditions this will need to be protected
+        {
             #region Next Section Reverse or Not
-
-            Debug.Log("Orientation of section " + nextSection.order + " is " + nextSection.getOrientationActual() + " turnout is facing " + lastSection.myEndpoints[ep].Direction);
+            int sect_orientation;
             if (nextSection.getOrientationActual() == lastSection.myEndpoints[ep].Direction)
+            { 
                 nextSection.Reverse(false);
+                sect_orientation = INetwork_Utils.CLOSED_NORM;
+            }
             else
+            { 
                 nextSection.Reverse(true);
-            #endregion
+                sect_orientation = INetwork_Utils.CLOSED_REVERSE;
+            }
+                #endregion
 
             #region Restart Train
             if (t.isStopped())//direction you are entering from
             {
-                //Debug.Log("Train " + t.getID() + "is starting again");
+                    //Debug.Log("Train " + t.getID() + "is starting again");
                 t.restart((int)spedOMeter.MySlider.value);
                 spedOMeter.updateText();
             }
@@ -140,10 +147,10 @@ public class Track : MonoBehaviour
 
             lastSection.Exit();
             nextSection.Enter();
-            
+
             t.SetSectionIndex(next);
-            myClient.MySend(INetwork_Utils.ENTER + INetwork_Utils.DELIM + next + INetwork_Utils.DELIM + last);
-        }
+            myClient.MySend(INetwork_Utils.ENTER + INetwork_Utils.DELIM + next + INetwork_Utils.DELIM + last + INetwork_Utils.DELIM + sect_orientation);
+            }
         else if (!t.isStopped())//next is locked hault the train
         { 
             if (passingThrough && (lastSection.myEndpoints[ep].getNext() == lastSection.order))//if its pointing to itself
@@ -165,10 +172,12 @@ public class Track : MonoBehaviour
         if (closeit)
             sections[sect].myEndpoints[toClose].deactivate();
     }
-    private int spawnTrain(int trainID, int targetID, Vector3 dir)
+    private int SpawnTrainOnTrack(int trainID, int targetID, int sectionId, Vector3 position, string name)
     {
+        Debug.Log("Spawning the other users trains");
+        Waypoint target = sections[sectionId].GetWaypointByID(targetID);
         GameObject obj = new GameObject("");
-        obj.transform.position = dir;
+        obj.transform.position = position;
         GameObject newObject = Instantiate(prefab, obj.transform);
         Train newTrain = newObject.GetComponent<Train>();
         bool added = false;
@@ -179,31 +188,40 @@ public class Track : MonoBehaviour
             {
                 added = true;
                 trains[i] = newTrain;
+                trains[i].ID = trainID;
+                trains[i].SetSectionIndex(sectionId);
+                sections[sectionId].StartingWithinSectionAt(targetID);
+                trains[i].Username.text = name;
                 break;
             }
         }
+        Debug.Log("finished with old train");
         if (added)
             return trains[i].ID;
         else
             return -1;
     }
 
-    private void spawnTrain()
+    private void SpawnMyTrain()
     {
 
-        while (sections[0].isLocked())
-        {
-            //write to UI waiting to spawn 
-            Debug.Log("couldnt spawn, waiting 5 sec");
-            System.Threading.Thread.Sleep(5000);
-        }
+        //while (sections[0].isLocked())
+        //{
+        //write to UI waiting to spawn 
+        //Debug.Log("couldnt spawn, waiting 5 sec");
+        //  System.Threading.Thread.Sleep(5000);
+        //}
         //if wrote to UI remove it and then complete spawn
-        
 
+        Debug.Log("Spawning this client's train");
         GameObject newObject = Instantiate(prefab, spawn);
         Train newTrain = newObject.GetComponent<Train>();
-        if(clientTrain is null)
-            clientTrain = newTrain; 
+        if (clientTrain is null)
+        { 
+            clientTrain = newTrain;
+            Debug.Log(PlayerPrefs.GetString("username"));
+            clientTrain.Username.text = PlayerPrefs.GetString("username");
+        }
         bool added = false;
         int i;
         for (i = 0; i < trains.Length; i++)
@@ -212,16 +230,45 @@ public class Track : MonoBehaviour
             {
                 added = true;
                 trains[i] = newTrain;
+                trains[i].SetTarget(firstPoint);
                 break;
             }
         }
         sections[0].Enter();
         if (added)
-        { myClient.MySend(INetwork_Utils.NEW_TRAIN + INetwork_Utils.DELIM + clientTrain.ID + INetwork_Utils.DELIM + clientTrain.Speed); }
+        { myClient.MySend(INetwork_Utils.NEW_TRAIN + INetwork_Utils.DELIM + clientTrain.ID + INetwork_Utils.DELIM + clientTrain.Speed + INetwork_Utils.DELIM + clientTrain.Username.text); }
         else
         { Debug.Log("Couldnt add the train...track must be full"); }
     }
+    private void SpawnOtherTrainSpawn(int id, int speed, string username)
+    {
 
+        //while (sections[0].isLocked())
+        //{
+        //write to UI waiting to spawn 
+        //Debug.Log("couldnt spawn, waiting 5 sec");
+        //  System.Threading.Thread.Sleep(5000);
+        //}
+        //if wrote to UI remove it and then complete spawn
+
+        Debug.Log("New user joined");
+        GameObject newObject = Instantiate(prefab, spawn);
+        Train newTrain = newObject.GetComponent<Train>();
+        int i;
+        for (i = 0; i < trains.Length; i++)
+        {
+            if (trains[i] is null)
+            {
+                trains[i] = newTrain;
+                trains[i].ID = id;
+                trains[i].SpeedChange(speed);
+                trains[i].Username.text = username;
+                trains[i].SetTarget(firstPoint);
+                break;
+            }
+        }
+        sections[0].Enter();
+    }
     public void ClientSpeedChanged() 
     {
         int s = (int)(spedOMeter.MySlider.value);
@@ -241,7 +288,9 @@ public class Track : MonoBehaviour
 
         switch (act)
         {
+            #region Turnouts
             case INetwork_Utils.TURN://TURN;index;direction
+                Debug.Log("In Turnout changed");
                 if (arr.Length == 3 && int.TryParse(arr[1], out i) && int.TryParse(arr[2], out val))
                     AdjustTurnout(i, val);
                 else
@@ -250,7 +299,10 @@ public class Track : MonoBehaviour
                     //tell the server
                 }
                 break;
+            #endregion
+            #region Speeds
             case INetwork_Utils.SPEED://SPEED;index;speed
+                Debug.Log("In Speed change");
                 if (arr.Length == 3 && int.TryParse(arr[1], out i) && int.TryParse(arr[2], out val))
                     ChangeSpeed(i, val);
                 else
@@ -259,17 +311,35 @@ public class Track : MonoBehaviour
                     //tell the server
                 }
                 break;
+            #endregion
+            #region Section Change CODE NOT WRITTEN
             case INetwork_Utils.ENTER://ENTER;index in;index out
                 break;
+            #endregion
+            #region Location Requested
             case INetwork_Utils.LOC:
                 SendLocation();
                 break;
-            case INetwork_Utils.NEW_TRAIN:
-                spawnTrain();
+            #endregion
+            #region New Train
+            case INetwork_Utils.NEW_TRAIN://NEW_TRAIN;id;speed;name
+                Debug.Log("In New Train");
+                i = int.Parse(arr[1]);
+                val = int.Parse(arr[2]);
+                string name;
+                if (arr.Length == 4)
+                    name = arr[3];
+                else
+                    name = "Didnt get the name";
+                SpawnOtherTrainSpawn(i,val,name);
+
                 break;
+            #endregion
+            #region Disconnection
             case INetwork_Utils.DISCONNECT:
-                RemoveTrain(int.Parse(arr[1]));
+                RemoveTrain(int.Parse(arr[1]),int.Parse(arr[2]));
                 break;
+            #endregion
         }
     }
     private void DoClientSetup()
@@ -279,13 +349,13 @@ public class Track : MonoBehaviour
         if ((turns.Split(INetwork_Utils.DELIM + ""))[0].Equals( INetwork_Utils.DISCONNECT + ""))
             return;//couldnt connect
         string sects = myClient.MyRecieve();
-        string spds = myClient.MyRecieve();
         string trs = myClient.MyRecieve();
 
         SetupSections(sects);
         SetupTurns(turns);
         SetupTrains(trs);
-        SetupSpeeds(spds);
+        FinishedSetup = true;
+        Debug.Log("Finished Client Setup");
         //start the client train iff section 0 is open 
     }
 
@@ -298,10 +368,13 @@ public class Track : MonoBehaviour
         //Debug.Log("section data after split " + msg);
         for (int i = 0; i < splitData.Length-1; i++)
         {
-            Debug.Log("Index = " + i);
-            
-            if (int.Parse(splitData[i]) == 1)
-                sections[i].Lock();
+            int sect_data = int.Parse(splitData[i]);
+            if (sect_data != INetwork_Utils.OPEN)
+            {
+                if (sect_data == INetwork_Utils.CLOSED_REVERSE)
+                    sections[i].Reverse(true);
+                sections[i].Lock(); 
+            }
             else
                 sections[i].Unlock();
         }
@@ -318,24 +391,53 @@ public class Track : MonoBehaviour
     }
 
     private void SetupTrains(string data)
-    {//train id;target id;Vector3 dir (x,y,z)
+    {//train id;target id;section id;Vector3 dir (x,y,z);Username
         Debug.Log(data);
         if (data.Equals(INetwork_Utils.NONE))
         { 
-            spawnTrain();
+            SpawnMyTrain();//no other trains on track
             return;
         }
 
         string[] trainData = data.Split(INetwork_Utils.DELIM);
-        for (int i = 0; i < trainData.Length-3; i += 3)
+        //int trainID = int.Parse(trainData[0]);
+        //int waypointID = int.Parse(trainData[1]);
+        //int sectionID = int.Parse(trainData[2]);
+        //string[] splitString = trainData[3].Trim(new char[] { '(', ')' }).Split(',');
+        //float x, y, z;
+        //Vector3 dir;
+        //if (float.TryParse(splitString[0], out x) && float.TryParse(splitString[1], out y) && float.TryParse(splitString[2], out z))
+        //{
+        //    Debug.Log("Got the x y z correctly");
+        //    dir = new Vector3(x, y, z);
+        //}
+        //else
+        //{
+        //    Debug.LogError("Failed to get the x y z not spawning the train");
+        //    return;
+        //}
+        //string name;
+        //if (trainData.Length == 5)
+        //    name = trainData[4]; 
+        //else
+        //    name = "Default Train Name";
+
+        for (int i = 0; i < trainData.Length - 5; i += 5)//train id; waypoint id; section id; Vector3 position; username 
         {
             int trainID = int.Parse(trainData[i]);
             int waypointID = int.Parse(trainData[i + 1]);
-            string[] splitString = trainData[i+2].Trim(new char[] { '(', ')' }).Split(',');
-            Vector3 dir = new Vector3(float.Parse(splitString[0]), float.Parse(splitString[1]), float.Parse(splitString[2]));
-            spawnTrain(trainID, waypointID, dir);
+            int sectionID = int.Parse(trainData[i + 2]);
+            string[] splitString = trainData[i + 3].Trim(new char[] { '(', ')' }).Split(',');
+            Vector3 position = new Vector3(float.Parse(splitString[0]), float.Parse(splitString[1]), float.Parse(splitString[2]));
+            string name;
+            try { name = trainData[i + 4]; } catch (IndexOutOfRangeException) { name = "name did not send"; }
+            SpawnTrainOnTrack(trainID, waypointID, sectionID, position, name);
         }
-        spawnTrain();
+        //SpawnTrainOnTrack(trainID, waypointID, sectionID, dir, name);
+        SpawnMyTrain();//spawn other train then ours
+
+
+        
     }
     private void AdjustTurnout(int id, int dir)
     {
@@ -348,27 +450,8 @@ public class Track : MonoBehaviour
     {
         foreach (Train t in trains)
         {
-            if (t.ID == id)
-                t.SpeedChange(s);
-        }
-    }
-
-    private void SetupSpeeds(string data)
-    { //id;speed;
-        if (data.Equals(INetwork_Utils.NONE))
-            return;
-        string[] splitData = data.Split(INetwork_Utils.DELIM);
-        for (int i = 0; i < splitData.Length / 2; i += 2)
-        {
-            int id = int.Parse(splitData[i]);
-            foreach (Train t in trains)
-            {
-                if (!(t is null))
-                {
-                    if (t.ID == id)
-                        t.SpeedChange(int.Parse(splitData[i + 1]));
-                }
-            }
+            if (!(t is null)&&t.ID == id)
+            { t.SpeedChange(s); Debug.Log("found the train changing speed"); }
         }
     }
 
@@ -377,14 +460,24 @@ public class Track : MonoBehaviour
         myClient.MySend(clientTrain.getLocation());
     }
 
-    private void RemoveTrain(int id) 
+    private void RemoveTrain(int id, int section_id) 
     {
         for (int i = 0; i < trains.Length; i++)
         {
-            if (trains[i].ID == id)
+            if (!(trains[i] is null) && trains[i].ID == id)
             {
+                Debug.Log("Found the train to remove");
+                Train disconnected = trains[i];
+                Destroy(disconnected.transform.gameObject);
+                Debug.Log("Child count of the transform.parent " + disconnected.transform.parent.childCount);
                 trains[i] = null;
-                return;
+                if (trains[i] is null)
+                    Debug.Log("Set train " + i + "to null");
+                else
+                    Debug.Log("null didnt work");
+                //make sure to clear the section
+
+                sections[section_id].Exit();
             }
         }
     }

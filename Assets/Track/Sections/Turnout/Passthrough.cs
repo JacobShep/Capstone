@@ -11,7 +11,7 @@ public class Passthrough : Endpoint
         {
             if (i != Direction && destinations[i] != -1)
             {
-                Debug.Log("Swapping " + Direction + " with " + i);
+                //Debug.Log("Swapping " + Direction + " with " + i);
                 Direction = i;
                 return;
             }
